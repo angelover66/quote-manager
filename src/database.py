@@ -316,6 +316,34 @@ def create_quotation(customer: str, requirement: str, budget: float,
     return dict(row)
 
 
+def update_quotation(quote_id: int, customer: str, requirement: str, budget: float,
+                     items: list, status: str = "Draft") -> dict:
+    """Update an existing quotation — replace basic info and line items."""
+    conn = get_connection()
+    total_quoted = sum(it["quoted_price"] * it["quantity"] for it in items)
+
+    conn.execute(
+        """UPDATE quotations SET customer=?, requirement=?, budget=?,
+           total_quoted=?, status=?, updated_at=datetime('now','localtime')
+           WHERE id=?""",
+        (customer, requirement, budget, total_quoted, status, quote_id),
+    )
+
+    # Delete old items, insert new ones
+    conn.execute("DELETE FROM quotation_items WHERE quotation_id=?", (quote_id,))
+    for it in items:
+        conn.execute(
+            """INSERT INTO quotation_items (quotation_id, product_id, guide_price, quoted_price, quantity)
+               VALUES (?, ?, ?, ?, ?)""",
+            (quote_id, it["product_id"], it["guide_price"], it["quoted_price"], it["quantity"]),
+        )
+
+    conn.commit()
+    row = conn.execute("SELECT * FROM quotations WHERE id=?", (quote_id,)).fetchone()
+    conn.close()
+    return dict(row)
+
+
 def verify_user(username: str, password: str) -> Optional[dict]:
     """Verify credentials. Returns user dict or None."""
     import hashlib
