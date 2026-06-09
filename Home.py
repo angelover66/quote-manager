@@ -67,8 +67,11 @@ if "show_create" not in st.session_state: st.session_state.show_create = False
 # SIDEBAR
 # ═══════════════════════════════════════════════════════════════
 with st.sidebar:
-    st.title("📋 Quotation")
-    st.caption("Platform")
+    st.markdown("""
+    <div style="font-size:20px;font-weight:700;color:#111827;padding:4px 0;">
+        📋 Quotation Platform
+    </div>
+    """, unsafe_allow_html=True)
     st.divider()
     page = st.radio("Navigation", ["📦 Product Management", "📋 Quotation Management"],
                     index=0 if st.session_state.nav == "products" else 1,
@@ -87,7 +90,7 @@ if st.session_state.nav == "products":
         st.header("📦 Product Management")
     with c2:
         st.write("")  # spacer
-        if st.button("Create Product", use_container_width=True):
+        if st.button("\1", use_container_width=True):
             st.session_state.show_create = True
             st.rerun()
 
@@ -105,9 +108,9 @@ if st.session_state.nav == "products":
                     unit = st.selectbox("Pricing Unit *", ["project", "batch", "study"])
                 cf1, cf2 = st.columns(2)
                 with cf1:
-                    sub = st.form_submit_button("Create", type="primary", use_container_width=True)
+                    sub = st.form_submit_button("Create", type="primary", width="stretch")
                 with cf2:
-                    cancel = st.form_submit_button("Cancel", use_container_width=True)
+                    cancel = st.form_submit_button("Cancel", width="stretch")
                 if sub:
                     if not ptype.strip(): st.error("Product Type required.")
                     elif price <= 0: st.error("Price must be > 0.")
@@ -131,8 +134,8 @@ if st.session_state.nav == "products":
         def cs(v):
             if v == "Active": return "background:#eef2ff;color:#4338ca;font-weight:500"
             return "background:#fef3c7;color:#92400e;font-weight:500"
-        st.dataframe(disp.style.applymap(cs, subset=["Status"]),
-                     use_container_width=True, hide_index=True, height=420)
+        st.dataframe(disp.style.map(cs, subset=["Status"]),
+                     width="stretch", hide_index=True, height=420)
 
 # ═══════════════════════════════════════════════════════════════
 # QUOTATION MANAGEMENT
@@ -173,7 +176,7 @@ else:
             st.header("📋 Quotation Management")
         with c2:
             st.write("")  # spacer
-            if st.button("Create Quotation", use_container_width=True):
+            if st.button("\1", use_container_width=True):
                 st.session_state.view = "create"
                 st.session_state.items = []
                 st.rerun()
@@ -235,7 +238,7 @@ else:
         with s1:
             sel = st.selectbox("Select product to add", list(popts.keys()), key="ps", label_visibility="collapsed")
         with s2:
-            if st.button("Add", use_container_width=True):
+            if st.button("\1", use_container_width=True):
                 p = popts[sel]
                 ids = [li["product_id"] for li in st.session_state.items]
                 if p["id"] not in ids:
@@ -286,10 +289,10 @@ else:
 
             bc, bd, bs = st.columns([1, 1, 1.5])
             with bc:
-                if st.button("← Cancel", use_container_width=True):
+                if st.button("\1", use_container_width=True):
                     st.session_state.view = "list"; st.session_state.items = []; st.rerun()
             with bd:
-                if st.button("💾 Save as Draft", use_container_width=True):
+                if st.button("\1", use_container_width=True):
                     if not customer or not req or budget <= 0: st.error("Fill all fields.")
                     elif len(st.session_state.items) == 0: st.error("Add at least one line item.")
                     else:
@@ -300,7 +303,7 @@ else:
                         st.session_state.view = "list"; st.session_state.items = []
                         st.success("Saved as Draft!"); st.rerun()
             with bs:
-                if st.button("✅ Submit for Review", use_container_width=True):
+                if st.button("\1", use_container_width=True):
                     if not customer or not req or budget <= 0: st.error("Fill all fields.")
                     elif len(st.session_state.items) == 0: st.error("Add at least one line item.")
                     else:
@@ -335,7 +338,7 @@ else:
         with s1:
             sel = st.selectbox("Add product", list(popts.keys()), key="eps", label_visibility="collapsed")
         with s2:
-            if st.button("Add", key="eadd", use_container_width=True):
+            if st.button("Add", key="eadd", width="stretch"):
                 p = popts[sel]
                 ids = [li["product_id"] for li in st.session_state.items]
                 if p["id"] not in ids:
@@ -385,11 +388,11 @@ else:
 
             bc, bd, bs = st.columns([1, 1, 1.5])
             with bc:
-                if st.button("← Cancel", key="ecancel", use_container_width=True):
+                if st.button("← Cancel", key="ecancel", width="stretch"):
                     st.session_state.view = "list"; st.session_state.items = []
                     st.session_state.editing_id = None; st.rerun()
             with bd:
-                if st.button("💾 Save as Draft", key="esave", use_container_width=True):
+                if st.button("💾 Save as Draft", key="esave", width="stretch"):
                     if not customer or not req or budget <= 0: st.error("Fill all fields.")
                     elif len(st.session_state.items) == 0: st.error("Add at least one line item.")
                     else:
@@ -401,7 +404,7 @@ else:
                         st.session_state.editing_id = None
                         st.success("Updated!"); st.rerun()
             with bs:
-                if st.button("✅ Submit for Review", key="esubmit", use_container_width=True):
+                if st.button("✅ Submit for Review", key="esubmit", width="stretch"):
                     if not customer or not req or budget <= 0: st.error("Fill all fields.")
                     elif len(st.session_state.items) == 0: st.error("Add at least one line item.")
                     else:
@@ -438,6 +441,6 @@ else:
                    "Qty":it["quantity"],
                    "Line Total":fmt(it["quoted_price"]*it["quantity"])}
                   for i,it in enumerate(q["items"])]
-            st.dataframe(pd.DataFrame(ir), use_container_width=True, hide_index=True)
+            st.dataframe(pd.DataFrame(ir), width="stretch", hide_index=True)
             tot = sum(it["quoted_price"]*it["quantity"] for it in q["items"])
             st.info(f"**Quoted Total (by quoted price): {fmt(tot)}**")
