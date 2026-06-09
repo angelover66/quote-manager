@@ -110,9 +110,9 @@ if st.session_state.nav == "products":
                     unit = st.selectbox("Pricing Unit *", ["project", "batch", "study"])
                 cf1, cf2 = st.columns(2)
                 with cf1:
-                    sub = st.form_submit_button("Create", type="primary", width="stretch")
+                    sub = st.form_submit_button("Create", type="primary", use_container_width=True)
                 with cf2:
-                    cancel = st.form_submit_button("Cancel", width="stretch")
+                    cancel = st.form_submit_button("Cancel", use_container_width=True)
                 if sub:
                     if not ptype.strip(): st.error("Product Type required.")
                     elif price <= 0: st.error("Price must be > 0.")
@@ -232,14 +232,14 @@ else:
             req = st.text_area("Requirement Details *", key="rd",
                                placeholder="Describe scope, timeline...", height=80)
 
-        st.subheader("Line Items")
+        st.subheader("Products Detail")
         prods = get_active_products()
         popts = {f"{p['product_type']} — {fmt(p['guide_price'])}/{p['unit']}": p for p in prods}
         s1, s2 = st.columns([3, 1])
         with s1:
             sel = st.selectbox("Select product to add", list(popts.keys()), key="ps", label_visibility="collapsed")
         with s2:
-            if st.button("Add", use_container_width=True):
+            if st.button("Add", key="add_create", use_container_width=True):
                 p = popts[sel]
                 ids = [li["product_id"] for li in st.session_state.items]
                 if p["id"] not in ids:
@@ -251,7 +251,7 @@ else:
                 else: st.warning("Already in list.")
 
         if not st.session_state.items:
-            st.info("No line items yet. Select a product and click Add.")
+            st.info("No products yet. Select a product and click Add.")
         else:
             total = 0
             hc = st.columns([0.4, 2.2, 1.2, 1.2, 0.7, 1.2, 0.5])
@@ -290,10 +290,10 @@ else:
 
             bc, bd, bs = st.columns([1, 1, 1.5])
             with bc:
-                if st.button("← Cancel", use_container_width=True):
+                if st.button("← Cancel", key="cancel_create", use_container_width=True):
                     st.session_state.view = "list"; st.session_state.items = []; st.rerun()
             with bd:
-                if st.button("💾 Save as Draft", use_container_width=True):
+                if st.button("💾 Save as Draft", key="draft_create", use_container_width=True):
                     if not customer or not req or budget <= 0: st.error("Fill all fields.")
                     elif len(st.session_state.items) == 0: st.error("Add at least one line item.")
                     else:
@@ -304,7 +304,7 @@ else:
                         st.session_state.view = "list"; st.session_state.items = []
                         st.success("Saved as Draft!"); st.rerun()
             with bs:
-                if st.button("✅ Submit for Review", use_container_width=True):
+                if st.button("✅ Submit for Review", key="submit_create", use_container_width=True):
                     if not customer or not req or budget <= 0: st.error("Fill all fields.")
                     elif len(st.session_state.items) == 0: st.error("Add at least one line item.")
                     else:
@@ -332,14 +332,14 @@ else:
             req = st.text_area("Requirement Details *", key="erd",
                                value=st.session_state.get("edit_requirement", ""), height=80)
 
-        st.subheader("Line Items")
+        st.subheader("Products Detail")
         prods = get_active_products()
         popts = {f"{p['product_type']} — {fmt(p['guide_price'])}/{p['unit']}": p for p in prods}
         s1, s2 = st.columns([3, 1])
         with s1:
             sel = st.selectbox("Add product", list(popts.keys()), key="eps", label_visibility="collapsed")
         with s2:
-            if st.button("Add", key="eadd", width="stretch"):
+            if st.button("Add", key="eadd", use_container_width=True):
                 p = popts[sel]
                 ids = [li["product_id"] for li in st.session_state.items]
                 if p["id"] not in ids:
@@ -435,7 +435,7 @@ else:
         st.write(f"**Requirements:** {q['requirement']}")
 
         if q["items"]:
-            st.subheader("Line Items")
+            st.subheader("Products Detail")
             ir = [{"#":i+1,"Product":it["product_type"],
                    "Guide Price":f"{fmt(it['guide_price'])}/{it['unit']}",
                    "Quoted Price":fmt(it["quoted_price"]),
