@@ -1,5 +1,5 @@
 """
-CDMO Quotation Management Platform
+Quotation Management Platform
 """
 
 import streamlit as st
@@ -10,10 +10,10 @@ from src.database import (
     get_active_products, create_quotation,
 )
 
-st.set_page_config(page_title="CDMO Quotation Platform", page_icon="📋", layout="wide")
+st.set_page_config(page_title="Quotation Platform", page_icon="📋", layout="wide")
 init_db()
 
-# ─── Minimal CSS ────────────────────────────────────────────
+# ─── CSS ────────────────────────────────────────────────────
 st.markdown("""
 <style>
     .stApp { background: #ffffff; }
@@ -23,7 +23,9 @@ st.markdown("""
     }
     .stButton > button {
         background: #4f46e5 !important; color: #fff !important;
-        border: none !important; border-radius: 8px !important; font-weight: 600 !important;
+        border: none !important; border-radius: 6px !important;
+        font-weight: 500 !important; font-size: 13px !important;
+        padding: 4px 14px !important;
     }
     .stDataFrame [data-testid="stTable"] table,
     .stDataFrame [data-testid="stTable"] td { background: #fff !important; color: #111 !important; }
@@ -52,13 +54,12 @@ if "show_create" not in st.session_state: st.session_state.show_create = False
 # SIDEBAR
 # ═══════════════════════════════════════════════════════════════
 with st.sidebar:
-    st.title("📋 CDMO")
-    st.caption("Quotation Platform")
+    st.title("📋 Quotation")
+    st.caption("Platform")
     st.divider()
     page = st.radio("Navigation", ["📦 Product Management", "📋 Quotation Management"],
                     index=0 if st.session_state.nav == "products" else 1,
                     label_visibility="collapsed")
-    # Map radio value back to session state
     if "Product" in page:
         st.session_state.nav = "products"
     else:
@@ -68,11 +69,12 @@ with st.sidebar:
 # PRODUCT MANAGEMENT
 # ═══════════════════════════════════════════════════════════════
 if st.session_state.nav == "products":
-    c1, c2 = st.columns([5, 2])
+    c1, c2 = st.columns([5, 1.5])
     with c1:
         st.header("📦 Product Management")
     with c2:
-        if st.button("➕ Create Product", use_container_width=True):
+        st.write("")  # spacer
+        if st.button("Create Product", use_container_width=True):
             st.session_state.show_create = True
             st.rerun()
 
@@ -124,14 +126,15 @@ if st.session_state.nav == "products":
 # ═══════════════════════════════════════════════════════════════
 else:
     if st.session_state.view == "list":
-        c1, c2 = st.columns([2, 5])
+        c1, c2 = st.columns([5, 1.5])
         with c1:
-            if st.button("➕ Create Quotation", use_container_width=True):
+            st.header("📋 Quotation Management")
+        with c2:
+            st.write("")  # spacer
+            if st.button("Create Quotation", use_container_width=True):
                 st.session_state.view = "create"
                 st.session_state.items = []
                 st.rerun()
-        with c2:
-            st.header("📋 Quotation Management")
 
         quotes = get_all_quotations()
         st.caption(f"**{len(quotes)}** quotations")
@@ -139,33 +142,43 @@ else:
         if not quotes:
             st.info("No quotations yet. Click Create Quotation.")
         else:
-            rows = []
+            # Manual table with inline View Detail buttons per row
+            hc = st.columns([1.2, 1.4, 1, 1, 0.8, 1, 1, 0.7])
+            for c, l in zip(hc, ["Quote No.","Client","Budget","Total Quoted","Status","Prepared By","Date",""]):
+                with c:
+                    st.markdown(f"<div style='font-size:11px;color:#6b7280;font-weight:600'>{l}</div>",
+                                unsafe_allow_html=True)
+
             for q in quotes:
                 td = fmt(q["total_quoted"]) if q["total_quoted"] and q["total_quoted"] > 0 else "—"
-                rows.append({
-                    "Quote No.": q["quote_no"], "Client": q["customer"],
-                    "Budget": fmt(q["budget"]), "Total Quoted": td,
-                    "Status": q["status"].capitalize(),
-                    "Prepared By": q["created_by_name"], "Date": q["created_at"],
-                })
-            df = pd.DataFrame(rows)
-            def cs(v):
-                if v == "Submitted": return "background:#eef2ff;color:#4338ca;font-weight:500"
-                return "background:#fef3c7;color:#92400e;font-weight:500"
-            st.dataframe(df.style.applymap(cs, subset=["Status"]),
-                         use_container_width=True, hide_index=True, height=350)
-
-            st.caption("View detail:")
-            bcs = st.columns(len(quotes))
-            for i, q in enumerate(quotes):
-                with bcs[i]:
-                    if st.button(f"View {q['quote_no']}", key=f"vd_{q['id']}", use_container_width=True):
+                status_color = "#4338ca" if q["status"] == "Submitted" else "#92400e"
+                cols = st.columns([1.2, 1.4, 1, 1, 0.8, 1, 1, 0.7])
+                with cols[0]:
+                    st.write(f"<span style='color:#4f46e5;font-weight:500;font-size:13px'>{q['quote_no']}</span>",
+                             unsafe_allow_html=True)
+                with cols[1]:
+                    st.write(f"<span style='font-size:13px'>{q['customer']}</span>", unsafe_allow_html=True)
+                with cols[2]:
+                    st.write(f"<span style='font-size:13px'>{fmt(q['budget'])}</span>", unsafe_allow_html=True)
+                with cols[3]:
+                    st.write(f"<span style='font-size:13px;font-weight:600'>{td}</span>", unsafe_allow_html=True)
+                with cols[4]:
+                    st.write(f"<span style='font-size:12px;color:{status_color};font-weight:500'>{q['status'].capitalize()}</span>",
+                             unsafe_allow_html=True)
+                with cols[5]:
+                    st.write(f"<span style='font-size:12px;color:#6b7280'>{q['created_by_name']}</span>",
+                             unsafe_allow_html=True)
+                with cols[6]:
+                    st.write(f"<span style='font-size:12px;color:#9ca3af'>{q['created_at']}</span>",
+                             unsafe_allow_html=True)
+                with cols[7]:
+                    if st.button("View", key=f"vd_{q['id']}", use_container_width=True):
                         st.session_state.view = "detail"
                         st.session_state.detail_id = q["id"]
                         st.rerun()
 
     elif st.session_state.view == "create":
-        st.header("➕ Create Quotation")
+        st.header("Create Quotation")
 
         st.subheader("Basic Information")
         with st.container(border=True):
@@ -185,7 +198,7 @@ else:
         with s1:
             sel = st.selectbox("Select product to add", list(popts.keys()), key="ps", label_visibility="collapsed")
         with s2:
-            if st.button("➕ Add", use_container_width=True):
+            if st.button("Add", use_container_width=True):
                 p = popts[sel]
                 ids = [li["product_id"] for li in st.session_state.items]
                 if p["id"] not in ids:
@@ -203,7 +216,8 @@ else:
             hc = st.columns([0.4, 2.2, 1.2, 1.2, 0.7, 1.2, 0.5])
             for c, l in zip(hc, ["#","Product","Guide Price","Quoted Price","Qty","Line Total",""]):
                 with c:
-                    st.caption(l)
+                    st.markdown(f"<div style='font-size:11px;color:#6b7280;font-weight:600'>{l}</div>",
+                                unsafe_allow_html=True)
 
             for i, item in enumerate(st.session_state.items):
                 is_proj = item["unit"] == "project"
