@@ -100,10 +100,10 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     st.divider()
-    page = st.radio("Navigation", ["📦 Products", "📋 Quotations"],
+    page = st.radio("Navigation", ["📦 Product Management", "📋 Quotation Management"],
                     index=0 if st.session_state.nav == "products" else 1,
                     label_visibility="collapsed")
-    if "Products" in page:
+    if "Product Management" in page:
         st.session_state.nav = "products"
     else:
         st.session_state.nav = "quotations"
