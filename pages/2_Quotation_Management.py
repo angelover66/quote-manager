@@ -1,7 +1,6 @@
 """
 CDMO Quotation Platform — Quotation Management Page
 Three sub-views via session_state: list, create, detail.
-Rendered by Home.py navigation — does NOT call set_page_config or require_auth.
 """
 
 import streamlit as st
@@ -9,12 +8,22 @@ from src.database import (
     init_db, get_all_quotations, get_quotation_detail,
     get_active_products, create_quotation,
 )
-from src.auth import get_current_user
-from src.components import status_badge, format_price
+from src.auth import require_auth, get_current_user
+from src.components import inject_css, render_sidebar, status_badge, format_price
+
+require_auth()
+
+st.set_page_config(
+    page_title="Quotation Management — CDMO Quotation",
+    page_icon="📋",
+    layout="wide",
+)
 
 init_db()
+inject_css()
+render_sidebar()
 
-# ─── Session state initialization ───────────────────────────
+# ─── Session state ──────────────────────────────────────────
 if "view" not in st.session_state:
     st.session_state.view = "list"
 if "detail_quote_id" not in st.session_state:
@@ -87,6 +96,7 @@ elif st.session_state.view == "create":
     st.markdown('<h2 style="color:#1a1a2e;">Create Quotation</h2>', unsafe_allow_html=True)
     st.caption("Fill in basic info and add line items below")
 
+    # Section 1: Basic Information
     st.markdown("""
     <div style="background:white; border-radius:10px; border:1px solid #e5e7eb; padding:20px; margin-bottom:20px;">
     <h4 style="margin:0 0 16px 0; color:#1a1a2e;">Basic Information</h4>
@@ -102,7 +112,7 @@ elif st.session_state.view == "create":
                                placeholder="Describe client requirements, project scope, timeline...", height=80)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ── Section 2: Line Items ─────────────────────────────────
+    # Section 2: Line Items
     st.markdown("""
     <div style="background:white; border-radius:10px; border:1px solid #e5e7eb; padding:20px;">
     <h4 style="margin:0 0 16px 0; color:#1a1a2e;">Line Items</h4>

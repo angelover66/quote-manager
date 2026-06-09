@@ -1,19 +1,27 @@
 """
 CDMO Quotation Platform — Product Management Page
 Display all products in a table, create new product with auto-generated code.
-Rendered by Home.py navigation — does NOT call set_page_config or require_auth.
 """
 
 import streamlit as st
 from src.database import init_db, get_all_products, create_product
-from src.components import status_badge, format_price
+from src.auth import require_auth
+from src.components import inject_css, render_sidebar, status_badge, format_price
+
+require_auth()
+
+st.set_page_config(
+    page_title="Product Management — CDMO Quotation",
+    page_icon="📦",
+    layout="wide",
+)
 
 init_db()
+inject_css()
+render_sidebar()
 
-# ─── Page header ────────────────────────────────────────────
 st.markdown('<h2 style="color:#1a1a2e;">Product Management</h2>', unsafe_allow_html=True)
 
-# ─── Tabs: Product List | + New Product ─────────────────────
 tab_list, tab_new = st.tabs(["📋 Product List", "➕ New Product"])
 
 with tab_list:

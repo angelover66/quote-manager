@@ -1,6 +1,6 @@
 """
 CDMO Quotation Platform — Reusable UI Components
-Sidebar navigation, CSS styling, display helpers.
+Sidebar user info, CSS styling, display helpers.
 """
 
 import streamlit as st
@@ -11,19 +11,13 @@ def inject_css():
     """Inject global CSS styles matching the Clean Light + Indigo design system."""
     st.markdown("""
     <style>
-        /* Page background */
         .stApp { background: #f5f7fa; }
 
-        /* Sidebar */
         section[data-testid="stSidebar"] {
             background: white;
             border-right: 1px solid #f0f0f0;
         }
-        section[data-testid="stSidebar"] .st-emotion-cache-1cypcdb {
-            background: white;
-        }
 
-        /* Primary button — Indigo */
         .stButton > button[kind="primary"] {
             background-color: #6366f1 !important;
             border: none !important;
@@ -32,7 +26,6 @@ def inject_css():
             font-weight: 600 !important;
         }
 
-        /* Secondary button */
         .stButton > button[kind="secondary"] {
             border: 1px solid #e5e7eb !important;
             border-radius: 8px !important;
@@ -40,44 +33,29 @@ def inject_css():
             background: white !important;
         }
 
-        /* Form labels */
         .stTextInput label, .stNumberInput label, .stTextArea label, .stSelectbox label {
             font-size: 12px !important;
             color: #6b7280 !important;
             font-weight: 500 !important;
         }
 
-        /* Hide default Streamlit header */
         header[data-testid="stHeader"] { display: none; }
     </style>
     """, unsafe_allow_html=True)
 
 
 def render_sidebar():
-    """Render the sidebar with navigation (2 items) and user info."""
+    """Render sidebar with user info and logout button.
+    Page navigation is handled natively by Streamlit multi-page discovery."""
     user = get_current_user()
     with st.sidebar:
-        st.markdown("""
-        <div style="padding: 4px 0 16px 0;">
-            <div style="font-size:11px; color:#9ca3af; text-transform:uppercase;
-                        letter-spacing:0.5px; font-weight:600;">NAVIGATION</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # Streamlit native navigation — 2 pages only
-        st.navigation([
-            st.Page("pages/1_Product_Management.py", title="📦 Product Management", icon="📦"),
-            st.Page("pages/2_Quotation_Management.py", title="📋 Quotation Management", icon="📋"),
-        ])
-
-        st.markdown("<div style='margin-top:24px;'></div>", unsafe_allow_html=True)
-
-        # User info footer
+        # User info at top
         st.markdown(f"""
-        <div style="border-top:1px solid #f0f0f0; padding-top:12px; margin-top:auto;">
-            <div style="font-size:12px; color:#6b7280;">👤 {user['username']}</div>
-            <div style="font-size:10px; color:#d1d5db; text-transform:capitalize;">{user['role']}</div>
+        <div style="padding: 8px 0 16px 0;">
+            <div style="font-size:13px; font-weight:600; color:#1a1a2e;">👤 {user['username']}</div>
+            <div style="font-size:11px; color:#9ca3af; text-transform:capitalize;">{user['role']}</div>
         </div>
+        <div style="border-bottom:1px solid #f0f0f0; margin-bottom:12px;"></div>
         """, unsafe_allow_html=True)
 
         if st.button("Logout", use_container_width=True, type="secondary"):
