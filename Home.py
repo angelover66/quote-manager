@@ -272,32 +272,35 @@ else:
 
             st.info(f"**Quoted Total (by quoted price): {fmt(total)}**")
 
-            bc, bd, bs = st.columns([1, 1, 1.5])
-            with bc:
-                if st.button("← Cancel", key="cancel_create", use_container_width=True):
-                    st.session_state.view = "list"; st.session_state.line_items = []; st.rerun()
-            with bd:
-                if st.button("💾 Save as Draft", key="draft_create", use_container_width=True):
-                    if not customer or not req or budget <= 0: st.error("Fill all fields.")
-                    elif len(st.session_state.line_items) == 0: st.error("Add at least one line item.")
-                    else:
-                        its = [{"product_id":li["product_id"],"guide_price":li["guide_price"],
-                                "quoted_price":li["quoted_price"],"quantity":li["quantity"]}
-                               for li in st.session_state.line_items]
-                        create_quotation(customer, req, budget, 1, its, "Draft")
-                        st.session_state.view = "list"; st.session_state.line_items = []
-                        st.success("Saved as Draft!"); st.rerun()
-            with bs:
-                if st.button("✅ Submit for Review", key="submit_create", use_container_width=True):
-                    if not customer or not req or budget <= 0: st.error("Fill all fields.")
-                    elif len(st.session_state.line_items) == 0: st.error("Add at least one line item.")
-                    else:
-                        its = [{"product_id":li["product_id"],"guide_price":li["guide_price"],
-                                "quoted_price":li["quoted_price"],"quantity":li["quantity"]}
-                               for li in st.session_state.line_items]
-                        create_quotation(customer, req, budget, 1, its, "Submitted")
-                        st.session_state.view = "list"; st.session_state.line_items = []
-                        st.success("Submitted!"); st.rerun()
+        # Action buttons — always visible
+        bc, bd, bs = st.columns([1, 1, 1.5])
+        with bc:
+            if st.button("← Cancel", key="cancel_create", use_container_width=True):
+                st.session_state.view = "list"; st.session_state.line_items = []; st.rerun()
+        with bd:
+            draft_clicked = st.button("💾 Save as Draft", key="draft_create", use_container_width=True)
+            if draft_clicked:
+                if not customer or not req or budget <= 0: st.error("Fill all fields.")
+                elif len(st.session_state.line_items) == 0: st.error("Add at least one line item.")
+                else:
+                    its = [{"product_id":li["product_id"],"guide_price":li["guide_price"],
+                            "quoted_price":li["quoted_price"],"quantity":li["quantity"]}
+                           for li in st.session_state.line_items]
+                    create_quotation(customer, req, budget, 1, its, "Draft")
+                    st.session_state.view = "list"; st.session_state.line_items = []
+                    st.success("Saved as Draft!"); st.rerun()
+        with bs:
+            submit_clicked = st.button("✅ Submit for Review", key="submit_create", use_container_width=True)
+            if submit_clicked:
+                if not customer or not req or budget <= 0: st.error("Fill all fields.")
+                elif len(st.session_state.line_items) == 0: st.error("Add at least one line item.")
+                else:
+                    its = [{"product_id":li["product_id"],"guide_price":li["guide_price"],
+                            "quoted_price":li["quoted_price"],"quantity":li["quantity"]}
+                           for li in st.session_state.line_items]
+                    create_quotation(customer, req, budget, 1, its, "Submitted")
+                    st.session_state.view = "list"; st.session_state.line_items = []
+                    st.success("Submitted!"); st.rerun()
 
     elif st.session_state.view == "edit" and st.session_state.editing_id:
         st.header("Edit Quotation")
