@@ -65,12 +65,28 @@ if "editing_id" not in st.session_state: st.session_state.editing_id = None
 if "line_items" not in st.session_state: st.session_state.line_items = []
 if "show_create" not in st.session_state: st.session_state.show_create = False
 
-# Handle query param navigation (View link in quotation table)
+# Handle query param navigation (View/Edit links in quotation table)
 qp = st.query_params
 if "action" in qp and "id" in qp:
     st.session_state.nav = "quotations"
-    st.session_state.view = "detail"
-    st.session_state.detail_id = int(qp["id"])
+    qid = int(qp["id"])
+    if qp["action"] == "edit":
+        eq = get_quotation_detail(qid)
+        if eq:
+            st.session_state.editing_id = qid
+            st.session_state.line_items = [{
+                "product_id": it["product_id"], "product_type": it["product_type"],
+                "product_code": it["product_code"], "guide_price": it["guide_price"],
+                "unit": it["unit"], "quoted_price": it["quoted_price"],
+                "quantity": it["quantity"],
+            } for it in eq["items"]]
+            st.session_state.edit_customer = eq["customer"]
+            st.session_state.edit_budget = eq["budget"]
+            st.session_state.edit_requirement = eq["requirement"]
+            st.session_state.view = "edit"
+    else:
+        st.session_state.view = "detail"
+        st.session_state.detail_id = qid
     st.query_params.clear()
     st.rerun()
 
@@ -183,7 +199,8 @@ else:
                 rows_html += f'<td style="padding:10px 14px;font-size:12px;color:#6b7280">{q["created_by_name"]}</td>'
                 rows_html += f'<td style="padding:10px 14px;font-size:12px;color:#9ca3af">{q["created_at"]}</td>'
                 rows_html += '<td style="padding:10px 14px;font-size:13px">'
-                rows_html += f'<a href="?action=view&id={q["id"]}" style="color:#4f46e5;text-decoration:none">View</a>'
+                rows_html += f'<a href="?action=view&id={q["id"]}" style="color:#4f46e5;text-decoration:none;margin-right:12px">View</a>'
+                rows_html += f'<a href="?action=edit&id={q["id"]}" style="color:#4f46e5;text-decoration:none">Edit</a>'
                 rows_html += '</td></tr>'
 
             table_html = '<div style="border:1px solid #d1d5db;border-radius:8px;overflow:hidden;">'
@@ -374,35 +391,36 @@ else:
 
             st.info(f"**Quoted Total: {fmt(total)}**")
 
-            bc, bd, bs = st.columns([1, 1, 1.5])
-            with bc:
-                if st.button("← Cancel", key="ecancel", width="stretch"):
+        # Action buttons — always visible
+        bc, bd, bs = st.columns([1, 1, 1.5])
+        with bc:
+            if st.button("← Cancel", key="ecancel", use_container_width=True):
+                st.session_state.view = "list"; st.session_state.line_items = []
+                st.session_state.editing_id = None; st.rerun()
+        with bd:
+            if st.button("💾 Save as Draft", key="esave", use_container_width=True):
+                if not customer or not req or budget <= 0: st.error("Fill all fields.")
+                elif len(st.session_state.line_items) == 0: st.error("Add at least one line item.")
+                else:
+                    its = [{"product_id":li["product_id"],"guide_price":li["guide_price"],
+                            "quoted_price":li["quoted_price"],"quantity":li["quantity"]}
+                           for li in st.session_state.line_items]
+                    update_quotation(st.session_state.editing_id, customer, req, budget, its, "Draft")
                     st.session_state.view = "list"; st.session_state.line_items = []
-                    st.session_state.editing_id = None; st.rerun()
-            with bd:
-                if st.button("💾 Save as Draft", key="esave", width="stretch"):
-                    if not customer or not req or budget <= 0: st.error("Fill all fields.")
-                    elif len(st.session_state.line_items) == 0: st.error("Add at least one line item.")
-                    else:
-                        its = [{"product_id":li["product_id"],"guide_price":li["guide_price"],
-                                "quoted_price":li["quoted_price"],"quantity":li["quantity"]}
-                               for li in st.session_state.line_items]
-                        update_quotation(st.session_state.editing_id, customer, req, budget, its, "Draft")
-                        st.session_state.view = "list"; st.session_state.line_items = []
-                        st.session_state.editing_id = None
-                        st.success("Updated!"); st.rerun()
-            with bs:
-                if st.button("✅ Submit for Review", key="esubmit", width="stretch"):
-                    if not customer or not req or budget <= 0: st.error("Fill all fields.")
-                    elif len(st.session_state.line_items) == 0: st.error("Add at least one line item.")
-                    else:
-                        its = [{"product_id":li["product_id"],"guide_price":li["guide_price"],
-                                "quoted_price":li["quoted_price"],"quantity":li["quantity"]}
-                               for li in st.session_state.line_items]
-                        update_quotation(st.session_state.editing_id, customer, req, budget, its, "Submitted")
-                        st.session_state.view = "list"; st.session_state.line_items = []
-                        st.session_state.editing_id = None
-                        st.success("Submitted!"); st.rerun()
+                    st.session_state.editing_id = None
+                    st.success("Updated!"); st.rerun()
+        with bs:
+            if st.button("✅ Submit for Review", key="esubmit", use_container_width=True):
+                if not customer or not req or budget <= 0: st.error("Fill all fields.")
+                elif len(st.session_state.line_items) == 0: st.error("Add at least one line item.")
+                else:
+                    its = [{"product_id":li["product_id"],"guide_price":li["guide_price"],
+                            "quoted_price":li["quoted_price"],"quantity":li["quantity"]}
+                           for li in st.session_state.line_items]
+                    update_quotation(st.session_state.editing_id, customer, req, budget, its, "Submitted")
+                    st.session_state.view = "list"; st.session_state.line_items = []
+                    st.session_state.editing_id = None
+                    st.success("Submitted!"); st.rerun()
 
     elif st.session_state.view == "detail" and st.session_state.detail_id:
         q = get_quotation_detail(st.session_state.detail_id)
