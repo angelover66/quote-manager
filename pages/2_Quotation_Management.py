@@ -10,13 +10,13 @@ from src.database import (
     get_active_products, create_quotation,
 )
 from src.auth import require_auth, get_current_user
-from src.components import inject_css, render_sidebar, format_price
+from src.components import inject_css, add_logout_button, format_price
 
 require_auth()
 st.set_page_config(page_title="Quotation Management", page_icon="📋", layout="wide")
 init_db()
 inject_css()
-render_sidebar()
+add_logout_button()
 
 # ─── Session state ──────────────────────────────────────────
 if "view" not in st.session_state:
