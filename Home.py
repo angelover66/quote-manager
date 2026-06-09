@@ -238,18 +238,21 @@ else:
         popts = {f"{p['product_type']} — {fmt(p['guide_price'])}/{p['unit']}": p for p in prods}
         s1, s2 = st.columns([3, 1])
         with s1:
-            sel = st.selectbox("Select product to add", list(popts.keys()), key="ps", label_visibility="collapsed")
+            sel = st.selectbox("Select product", ["please select the product"] + list(popts.keys()), key="ps", label_visibility="collapsed")
         with s2:
-            if st.button("Add", key="add_create", use_container_width=True):
-                p = popts[sel]
-                ids = [li["product_id"] for li in st.session_state.line_items]
-                if p["id"] not in ids:
-                    st.session_state.line_items.append({
-                        "product_id": p["id"], "product_type": p["product_type"],
-                        "guide_price": p["guide_price"], "unit": p["unit"],
-                        "quoted_price": p["guide_price"], "quantity": 1,
-                    }); st.rerun()
-                else: st.warning("Already in list.")
+            if st.button("Add Product", key="add_create", use_container_width=True):
+                if sel == "please select the product":
+                    st.warning("Please select a product first.")
+                else:
+                    p = popts[sel]
+                    ids = [li["product_id"] for li in st.session_state.line_items]
+                    if p["id"] not in ids:
+                        st.session_state.line_items.append({
+                            "product_id": p["id"], "product_type": p["product_type"],
+                            "guide_price": p["guide_price"], "unit": p["unit"],
+                            "quoted_price": p["guide_price"], "quantity": 1,
+                        }); st.rerun()
+                    else: st.warning("Already in list.")
 
         if not st.session_state.line_items:
             st.info("No products yet. Select a product and click Add.")
@@ -341,18 +344,21 @@ else:
         popts = {f"{p['product_type']} — {fmt(p['guide_price'])}/{p['unit']}": p for p in prods}
         s1, s2 = st.columns([3, 1])
         with s1:
-            sel = st.selectbox("Add product", list(popts.keys()), key="eps", label_visibility="collapsed")
+            sel = st.selectbox("Select product", ["please select the product"] + list(popts.keys()), key="eps", label_visibility="collapsed")
         with s2:
-            if st.button("Add", key="eadd", use_container_width=True):
-                p = popts[sel]
-                ids = [li["product_id"] for li in st.session_state.line_items]
-                if p["id"] not in ids:
-                    st.session_state.line_items.append({
-                        "product_id": p["id"], "product_type": p["product_type"],
-                        "guide_price": p["guide_price"], "unit": p["unit"],
-                        "quoted_price": p["guide_price"], "quantity": 1,
-                    }); st.rerun()
-                else: st.warning("Already in list.")
+            if st.button("Add Product", key="eadd", use_container_width=True):
+                if sel == "please select the product":
+                    st.warning("Please select a product first.")
+                else:
+                    p = popts[sel]
+                    ids = [li["product_id"] for li in st.session_state.line_items]
+                    if p["id"] not in ids:
+                        st.session_state.line_items.append({
+                            "product_id": p["id"], "product_type": p["product_type"],
+                            "guide_price": p["guide_price"], "unit": p["unit"],
+                            "quoted_price": p["guide_price"], "quantity": 1,
+                        }); st.rerun()
+                    else: st.warning("Already in list.")
 
         if not st.session_state.line_items:
             st.info("No line items.")
