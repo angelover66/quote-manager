@@ -162,47 +162,34 @@ else:
         if not quotes:
             st.info("No quotations yet. Click Create Quotation.")
         else:
-            # Build pure HTML table with text links for View/Edit
+            # Build HTML table as single string for st.html()
             rows_html = ""
             for q in quotes:
                 td = fmt(q["total_quoted"]) if q["total_quoted"] and q["total_quoted"] > 0 else "—"
                 sc = "#4338ca" if q["status"] == "Submitted" else "#92400e"
-                rows_html += f"""
-                <tr style="border-bottom:1px solid #d1d5db;">
-                    <td style="padding:10px 14px;font-size:13px;color:#4f46e5;font-weight:500">{q['quote_no']}</td>
-                    <td style="padding:10px 14px;font-size:13px;color:#111827">{q['customer']}</td>
-                    <td style="padding:10px 14px;font-size:13px;color:#111827">{fmt(q['budget'])}</td>
-                    <td style="padding:10px 14px;font-size:13px;color:#111827;font-weight:600">{td}</td>
-                    <td style="padding:10px 14px;font-size:12px;color:{sc};font-weight:500">{q['status'].capitalize()}</td>
-                    <td style="padding:10px 14px;font-size:12px;color:#6b7280">{q['created_by_name']}</td>
-                    <td style="padding:10px 14px;font-size:12px;color:#9ca3af">{q['created_at']}</td>
-                    <td style="padding:10px 14px;font-size:13px">
-                        <a href="?action=view&id={q['id']}" style="color:#4f46e5;text-decoration:none;margin-right:12px">View</a>
-                        <a href="?action=edit&id={q['id']}" style="color:#4f46e5;text-decoration:none">Edit</a>
-                    </td>
-                </tr>"""
+                rows_html += '<tr style="border-bottom:1px solid #d1d5db;">'
+                rows_html += f'<td style="padding:10px 14px;font-size:13px;color:#4f46e5;font-weight:500">{q["quote_no"]}</td>'
+                rows_html += f'<td style="padding:10px 14px;font-size:13px;color:#111827">{q["customer"]}</td>'
+                rows_html += f'<td style="padding:10px 14px;font-size:13px;color:#111827">{fmt(q["budget"])}</td>'
+                rows_html += f'<td style="padding:10px 14px;font-size:13px;color:#111827;font-weight:600">{td}</td>'
+                rows_html += f'<td style="padding:10px 14px;font-size:12px;color:{sc};font-weight:500">{q["status"].capitalize()}</td>'
+                rows_html += f'<td style="padding:10px 14px;font-size:12px;color:#6b7280">{q["created_by_name"]}</td>'
+                rows_html += f'<td style="padding:10px 14px;font-size:12px;color:#9ca3af">{q["created_at"]}</td>'
+                rows_html += '<td style="padding:10px 14px;font-size:13px">'
+                rows_html += f'<a href="?action=view&id={q["id"]}" style="color:#4f46e5;text-decoration:none;margin-right:12px">View</a>'
+                rows_html += f'<a href="?action=edit&id={q["id"]}" style="color:#4f46e5;text-decoration:none">Edit</a>'
+                rows_html += '</td></tr>'
 
-            st.markdown(f"""
-            <div style="border:1px solid #d1d5db;border-radius:8px;overflow:hidden;">
-            <table style="width:100%;border-collapse:collapse;">
-                <thead>
-                    <tr style="background:#f9fafb;border-bottom:2px solid #d1d5db;">
-                        <th style="padding:10px 14px;font-size:11px;color:#6b7280;font-weight:600;text-align:left">Quote No.</th>
-                        <th style="padding:10px 14px;font-size:11px;color:#6b7280;font-weight:600;text-align:left">Client</th>
-                        <th style="padding:10px 14px;font-size:11px;color:#6b7280;font-weight:600;text-align:left">Budget</th>
-                        <th style="padding:10px 14px;font-size:11px;color:#6b7280;font-weight:600;text-align:left">Total Quoted</th>
-                        <th style="padding:10px 14px;font-size:11px;color:#6b7280;font-weight:600;text-align:left">Status</th>
-                        <th style="padding:10px 14px;font-size:11px;color:#6b7280;font-weight:600;text-align:left">Prepared By</th>
-                        <th style="padding:10px 14px;font-size:11px;color:#6b7280;font-weight:600;text-align:left">Date</th>
-                        <th style="padding:10px 14px;font-size:11px;color:#6b7280;font-weight:600;text-align:left">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {rows_html}
-                </tbody>
-            </table>
-            </div>
-            """, unsafe_allow_html=True)
+            table_html = '<div style="border:1px solid #d1d5db;border-radius:8px;overflow:hidden;">'
+            table_html += '<table style="width:100%;border-collapse:collapse;">'
+            table_html += '<thead><tr style="background:#f9fafb;border-bottom:2px solid #d1d5db;">'
+            for col in ["Quote No.","Client","Budget","Total Quoted","Status","Prepared By","Date","Actions"]:
+                table_html += f'<th style="padding:10px 14px;font-size:11px;color:#6b7280;font-weight:600;text-align:left">{col}</th>'
+            table_html += '</tr></thead><tbody>'
+            table_html += rows_html
+            table_html += '</tbody></table></div>'
+
+            st.html(table_html)
 
 
     elif st.session_state.view == "create":
