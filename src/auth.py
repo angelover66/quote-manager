@@ -32,11 +32,9 @@ def login(username: str, password: str) -> bool:
 
 
 def logout():
-    """Clear session state and return to login."""
-    st.session_state.user = None
-    st.session_state.pop("view", None)
-    st.session_state.pop("line_items", None)
-    st.session_state.pop("editing_quote", None)
+    """Clear all session state keys."""
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
 
 
 def get_current_user():

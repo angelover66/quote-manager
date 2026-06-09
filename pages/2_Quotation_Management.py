@@ -1,7 +1,7 @@
 """
 CDMO Quotation Platform — Quotation Management Page
 Three sub-views via session_state: list, create, detail.
-Create view merges Step 1 (basic info) + Step 2 (line items) on one page.
+Rendered by Home.py navigation — does NOT call set_page_config or require_auth.
 """
 
 import streamlit as st
@@ -9,29 +9,18 @@ from src.database import (
     init_db, get_all_quotations, get_quotation_detail,
     get_active_products, create_quotation,
 )
-from src.auth import require_auth, get_current_user
-from src.components import inject_css, render_sidebar, status_badge, format_price
-
-# ─── Auth gate ──────────────────────────────────────────────
-require_auth()
-
-st.set_page_config(
-    page_title="Quotation Management — CDMO Quotation",
-    page_icon="📋",
-    layout="wide",
-)
+from src.auth import get_current_user
+from src.components import status_badge, format_price
 
 init_db()
-inject_css()
-render_sidebar()
 
 # ─── Session state initialization ───────────────────────────
 if "view" not in st.session_state:
-    st.session_state.view = "list"        # list | create | detail
+    st.session_state.view = "list"
 if "detail_quote_id" not in st.session_state:
     st.session_state.detail_quote_id = None
 if "line_items" not in st.session_state:
-    st.session_state.line_items = []      # [{product_id, product_type, guide_price, unit, quoted_price, quantity}]
+    st.session_state.line_items = []
 
 # ═══════════════════════════════════════════════════════════════
 # VIEW: LIST
@@ -53,7 +42,6 @@ if st.session_state.view == "list":
     if not quotations:
         st.info("No quotations yet. Click 'Create Quotation' to get started.")
     else:
-        # Build table as HTML for clean styling
         rows_html = ""
         for q in quotations:
             total_display = format_price(q["total_quoted"]) if q["total_quoted"] and q["total_quoted"] > 0 else "—"
@@ -86,7 +74,6 @@ if st.session_state.view == "list":
         </div>
         """, unsafe_allow_html=True)
 
-        # Hidden buttons for row click → detail view
         for q in quotations:
             if st.button("View", key=f"detail_{q['id']}", type="secondary"):
                 st.session_state.view = "detail"
@@ -100,7 +87,6 @@ elif st.session_state.view == "create":
     st.markdown('<h2 style="color:#1a1a2e;">Create Quotation</h2>', unsafe_allow_html=True)
     st.caption("Fill in basic info and add line items below")
 
-    # ── Section 1: Basic Information ──────────────────────────
     st.markdown("""
     <div style="background:white; border-radius:10px; border:1px solid #e5e7eb; padding:20px; margin-bottom:20px;">
     <h4 style="margin:0 0 16px 0; color:#1a1a2e;">Basic Information</h4>
@@ -108,15 +94,12 @@ elif st.session_state.view == "create":
 
     col1, col2 = st.columns(2)
     with col1:
-        customer = st.text_input("Client Name *", key="cust_name",
-                                 placeholder="Enter client company name")
+        customer = st.text_input("Client Name *", key="cust_name", placeholder="Enter client company name")
     with col2:
         budget = st.number_input("Budget Amount (¥) *", min_value=0.01, value=1000000.0,
                                  step=100000.0, format="%.0f", key="budget_val")
-
     requirement = st.text_area("Requirement Details *", key="req_detail",
-                               placeholder="Describe client requirements, project scope, timeline...",
-                               height=80)
+                               placeholder="Describe client requirements, project scope, timeline...", height=80)
     st.markdown("</div>", unsafe_allow_html=True)
 
     # ── Section 2: Line Items ─────────────────────────────────
@@ -125,21 +108,15 @@ elif st.session_state.view == "create":
     <h4 style="margin:0 0 16px 0; color:#1a1a2e;">Line Items</h4>
     """, unsafe_allow_html=True)
 
-    # Product selector + Add button
     products = get_active_products()
     product_options = {
-        f"{p['product_type']} — {format_price(p['guide_price'])}/{p['unit']}": p
-        for p in products
+        f"{p['product_type']} — {format_price(p['guide_price'])}/{p['unit']}": p for p in products
     }
 
     col_sel, col_add = st.columns([3, 1])
     with col_sel:
-        selected = st.selectbox(
-            "Add Product",
-            options=list(product_options.keys()),
-            key="product_selector",
-            label_visibility="collapsed"
-        )
+        selected = st.selectbox("Add Product", options=list(product_options.keys()),
+                                key="product_selector", label_visibility="collapsed")
     with col_add:
         if st.button("➕ Add", type="primary", use_container_width=True):
             p = product_options[selected]
@@ -151,7 +128,7 @@ elif st.session_state.view == "create":
                     "product_code": p["product_code"],
                     "guide_price": p["guide_price"],
                     "unit": p["unit"],
-                    "quoted_price": p["guide_price"],  # default = guide price
+                    "quoted_price": p["guide_price"],
                     "quantity": 1,
                 })
                 st.rerun()
@@ -160,27 +137,22 @@ elif st.session_state.view == "create":
 
     st.markdown("<hr style='margin:12px 0; border-color:#f0f0f0;'>", unsafe_allow_html=True)
 
-    # Line items table
     if not st.session_state.line_items:
         st.info("No line items yet. Select a product above and click 'Add'.")
     else:
         total = 0
         for i, item in enumerate(st.session_state.line_items):
             is_project = item["unit"] == "project"
-
             cols = st.columns([0.5, 2.5, 1.3, 1.3, 0.8, 1.3, 0.6])
             with cols[0]:
-                st.markdown(
-                    f"<div style='padding-top:28px; font-size:13px; color:#9ca3af;'>{i + 1}</div>",
-                    unsafe_allow_html=True)
+                st.markdown(f"<div style='padding-top:28px; font-size:13px; color:#9ca3af;'>{i+1}</div>",
+                            unsafe_allow_html=True)
             with cols[1]:
-                st.markdown(
-                    f"<div style='padding-top:28px; font-size:13px; color:#1a1a2e; font-weight:500;'>{item['product_type']}</div>",
-                    unsafe_allow_html=True)
+                st.markdown(f"<div style='padding-top:28px; font-size:13px; color:#1a1a2e; font-weight:500;'>{item['product_type']}</div>",
+                            unsafe_allow_html=True)
             with cols[2]:
-                st.markdown(
-                    f"<div style='padding-top:28px; font-size:12px; color:#9ca3af;'>{format_price(item['guide_price'])}/{item['unit']}</div>",
-                    unsafe_allow_html=True)
+                st.markdown(f"<div style='padding-top:28px; font-size:12px; color:#9ca3af;'>{format_price(item['guide_price'])}/{item['unit']}</div>",
+                            unsafe_allow_html=True)
             with cols[3]:
                 item["quoted_price"] = st.number_input(
                     "Quoted Price", value=float(item["quoted_price"]), min_value=1.0, step=1000.0,
@@ -188,26 +160,22 @@ elif st.session_state.view == "create":
             with cols[4]:
                 if is_project:
                     item["quantity"] = 1
-                    st.number_input(
-                        "Qty", value=1, disabled=True,
-                        key=f"qty_{i}", label_visibility="collapsed")
+                    st.number_input("Qty", value=1, disabled=True,
+                                    key=f"qty_{i}", label_visibility="collapsed")
                 else:
                     item["quantity"] = st.number_input(
                         "Qty", value=int(item["quantity"]), min_value=1, step=1,
                         key=f"qty_{i}", label_visibility="collapsed")
             with cols[5]:
                 line_total = item["quoted_price"] * item["quantity"]
-                st.markdown(
-                    f"<div style='padding-top:28px; font-size:14px; color:#6366f1; font-weight:700;'>{format_price(line_total)}</div>",
-                    unsafe_allow_html=True)
+                st.markdown(f"<div style='padding-top:28px; font-size:14px; color:#6366f1; font-weight:700;'>{format_price(line_total)}</div>",
+                            unsafe_allow_html=True)
             with cols[6]:
                 if st.button("✕", key=f"del_{i}"):
                     st.session_state.line_items.pop(i)
                     st.rerun()
-
             total += item["quoted_price"] * item["quantity"]
 
-        # Total row
         st.markdown(f"""
         <div style="display:flex; justify-content:flex-end; align-items:center;
                     margin-top:12px; padding:12px 16px; background:#f5f3ff; border-radius:8px;">
@@ -216,7 +184,6 @@ elif st.session_state.view == "create":
         </div>
         """, unsafe_allow_html=True)
 
-        # ── Action buttons ───────────────────────────────────
         st.markdown("<div style='margin-top:20px;'></div>", unsafe_allow_html=True)
         col_back, col_draft, col_submit = st.columns([1, 1, 1.5])
         with col_back:
@@ -226,19 +193,15 @@ elif st.session_state.view == "create":
                 st.rerun()
         with col_draft:
             if st.button("💾 Save as Draft", use_container_width=True, type="secondary"):
-                # Validation
                 if not customer or not requirement or budget <= 0:
                     st.error("Please fill in all Basic Information fields before saving.")
                 elif len(st.session_state.line_items) == 0:
                     st.error("Please add at least one line item.")
                 else:
                     user = get_current_user()
-                    items = [{
-                        "product_id": li["product_id"],
-                        "guide_price": li["guide_price"],
-                        "quoted_price": li["quoted_price"],
-                        "quantity": li["quantity"],
-                    } for li in st.session_state.line_items]
+                    items = [{"product_id": li["product_id"], "guide_price": li["guide_price"],
+                              "quoted_price": li["quoted_price"], "quantity": li["quantity"]}
+                             for li in st.session_state.line_items]
                     create_quotation(customer, requirement, budget, user["id"], items, status="Draft")
                     st.session_state.view = "list"
                     st.session_state.line_items = []
@@ -252,12 +215,9 @@ elif st.session_state.view == "create":
                     st.error("Please add at least one line item.")
                 else:
                     user = get_current_user()
-                    items = [{
-                        "product_id": li["product_id"],
-                        "guide_price": li["guide_price"],
-                        "quoted_price": li["quoted_price"],
-                        "quantity": li["quantity"],
-                    } for li in st.session_state.line_items]
+                    items = [{"product_id": li["product_id"], "guide_price": li["guide_price"],
+                              "quoted_price": li["quoted_price"], "quantity": li["quantity"]}
+                             for li in st.session_state.line_items]
                     create_quotation(customer, requirement, budget, user["id"], items, status="Submitted")
                     st.session_state.view = "list"
                     st.session_state.line_items = []
@@ -271,13 +231,11 @@ elif st.session_state.view == "create":
 # ═══════════════════════════════════════════════════════════════
 elif st.session_state.view == "detail" and st.session_state.detail_quote_id:
     q = get_quotation_detail(st.session_state.detail_quote_id)
-
     if not q:
         st.error("Quotation not found.")
         st.session_state.view = "list"
         st.rerun()
 
-    # Back button
     if st.button("← Back to List", type="secondary"):
         st.session_state.view = "list"
         st.session_state.detail_quote_id = None
@@ -290,7 +248,6 @@ elif st.session_state.view == "detail" and st.session_state.detail_quote_id:
     </div>
     """, unsafe_allow_html=True)
 
-    # Basic info card
     st.markdown(f"""
     <div style="background:white; border-radius:10px; border:1px solid #e5e7eb; padding:20px; margin-bottom:20px;">
         <div style="font-size:11px; color:#9ca3af; margin-bottom:12px; font-weight:600;">BASIC INFORMATION</div>
@@ -306,19 +263,18 @@ elif st.session_state.view == "detail" and st.session_state.detail_quote_id:
     </div>
     """, unsafe_allow_html=True)
 
-    # Line items table
     if q["items"]:
         rows = ""
         for i, it in enumerate(q["items"]):
-            line_total = it["quoted_price"] * it["quantity"]
+            lt = it["quoted_price"] * it["quantity"]
             rows += f"""
             <tr style="border-bottom:1px solid #f5f5f5;">
-                <td style="padding:10px 14px; font-size:12px; color:#9ca3af;">{i + 1}</td>
+                <td style="padding:10px 14px; font-size:12px; color:#9ca3af;">{i+1}</td>
                 <td style="padding:10px 14px; font-size:13px; color:#1a1a2e; font-weight:500;">{it['product_type']}</td>
                 <td style="padding:10px 14px; font-size:12px; color:#9ca3af;">{format_price(it['guide_price'])}/{it['unit']}</td>
                 <td style="padding:10px 14px; font-size:13px; color:#1a1a2e;">{format_price(it['quoted_price'])}</td>
                 <td style="padding:10px 14px; font-size:13px; color:#1a1a2e;">{it['quantity']}</td>
-                <td style="padding:10px 14px; font-size:13px; color:#6366f1; font-weight:600;">{format_price(line_total)}</td>
+                <td style="padding:10px 14px; font-size:13px; color:#6366f1; font-weight:600;">{format_price(lt)}</td>
             </tr>"""
 
         st.markdown(f"""
@@ -338,7 +294,6 @@ elif st.session_state.view == "detail" and st.session_state.detail_quote_id:
         </div>
         """, unsafe_allow_html=True)
 
-        # Total
         total = sum(it["quoted_price"] * it["quantity"] for it in q["items"])
         st.markdown(f"""
         <div style="display:flex; justify-content:flex-end;">
