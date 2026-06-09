@@ -1,6 +1,5 @@
 """
 CDMO Quotation Platform — Quotation Management
-Three views: list, create, detail — driven by st.session_state.view
 """
 
 import streamlit as st
@@ -9,16 +8,16 @@ from src.database import (
     init_db, get_all_quotations, get_quotation_detail,
     get_active_products, create_quotation,
 )
-from src.auth import require_auth, get_current_user
-from src.components import inject_css, add_logout_button, format_price
+from src.components import inject_css, format_price
 
-require_auth()
 st.set_page_config(page_title="Quotation Management", page_icon="📋", layout="wide")
 init_db()
 inject_css()
-add_logout_button()
 
-# ─── Session state ──────────────────────────────────────────
+# Default user for quotations (no auth)
+DEFAULT_USER_ID = 1
+DEFAULT_USER_NAME = "sales"
+
 if "view" not in st.session_state:
     st.session_state.view = "list"
 if "detail_quote_id" not in st.session_state:
@@ -85,9 +84,8 @@ if st.session_state.view == "list":
 # =====================================================================
 elif st.session_state.view == "create":
     st.markdown("## ➕ Create Quotation")
-    st.caption("Step 1: Basic Info &nbsp;|&nbsp; Step 2: Line Items")
+    st.caption("Step 1: Basic Info  |  Step 2: Line Items")
 
-    # ── Basic Information ──────────────────────────────────
     st.markdown("#### Basic Information")
     with st.container(border=True):
         c1, c2 = st.columns(2)
@@ -102,7 +100,6 @@ elif st.session_state.view == "create":
 
     st.markdown("#### Line Items")
 
-    # Product selector
     products = get_active_products()
     product_opts = {f"{p['product_type']} — {format_price(p['guide_price'])}/{p['unit']}": p
                      for p in products}
@@ -129,7 +126,6 @@ elif st.session_state.view == "create":
         st.info("No line items yet. Select a product and click Add.")
     else:
         total = 0
-        # Column header
         hc = st.columns([0.4, 2.2, 1.2, 1.2, 0.7, 1.2, 0.5])
         for c, l in zip(hc, ["#", "Product", "Guide Price", "Quoted Price", "Qty", "Line Total", ""]):
             with c:
@@ -168,7 +164,6 @@ elif st.session_state.view == "create":
                     st.rerun()
             total += item["quoted_price"] * item["quantity"]
 
-        # Total bar
         st.markdown(f"""
         <div style="display:flex;justify-content:flex-end;align-items:center;
                     padding:14px 20px;background:#eef2ff;border-radius:10px;margin-top:8px;">
@@ -177,7 +172,6 @@ elif st.session_state.view == "create":
         </div>
         """, unsafe_allow_html=True)
 
-        # Actions
         st.markdown("")
         bc, bd, bs = st.columns([1, 1, 1.5])
         with bc:
@@ -190,11 +184,10 @@ elif st.session_state.view == "create":
                 elif len(st.session_state.line_items) == 0:
                     st.error("Add at least one line item.")
                 else:
-                    u = get_current_user()
                     its = [{"product_id": li["product_id"], "guide_price": li["guide_price"],
                             "quoted_price": li["quoted_price"], "quantity": li["quantity"]}
                            for li in st.session_state.line_items]
-                    create_quotation(customer, requirement, budget, u["id"], its, "Draft")
+                    create_quotation(customer, requirement, budget, DEFAULT_USER_ID, its, "Draft")
                     st.session_state.view = "list"; st.session_state.line_items = []
                     st.success("Saved as Draft!"); st.rerun()
         with bs:
@@ -204,11 +197,10 @@ elif st.session_state.view == "create":
                 elif len(st.session_state.line_items) == 0:
                     st.error("Add at least one line item.")
                 else:
-                    u = get_current_user()
                     its = [{"product_id": li["product_id"], "guide_price": li["guide_price"],
                             "quoted_price": li["quoted_price"], "quantity": li["quantity"]}
                            for li in st.session_state.line_items]
-                    create_quotation(customer, requirement, budget, u["id"], its, "Submitted")
+                    create_quotation(customer, requirement, budget, DEFAULT_USER_ID, its, "Submitted")
                     st.session_state.view = "list"; st.session_state.line_items = []
                     st.success("Submitted for review!"); st.rerun()
 
@@ -228,7 +220,6 @@ elif st.session_state.view == "detail" and st.session_state.detail_quote_id:
     st.markdown(f"## 📋 {q['quote_no']} &nbsp; <span style='font-size:14px;color:{status_color}'>({q['status']})</span>",
                 unsafe_allow_html=True)
 
-    # Basic info cards
     st.markdown("#### Basic Information")
     mc1, mc2, mc3 = st.columns(3)
     with mc1:
@@ -239,7 +230,6 @@ elif st.session_state.view == "detail" and st.session_state.detail_quote_id:
         st.metric("Prepared by", q["created_by_name"])
     st.write(f"**Requirements:** {q['requirement']}")
 
-    # Line items
     if q["items"]:
         st.markdown("#### Line Items")
         rows = []

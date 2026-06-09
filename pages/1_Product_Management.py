@@ -5,20 +5,15 @@ CDMO Quotation Platform — Product Management
 import streamlit as st
 import pandas as pd
 from src.database import init_db, get_all_products, create_product
-from src.auth import require_auth
-from src.components import inject_css, add_logout_button, format_price
+from src.components import inject_css, format_price
 
-require_auth()
 st.set_page_config(page_title="Product Management", page_icon="📦", layout="wide")
 init_db()
 inject_css()
-add_logout_button()
 
-# ─── Page Header ────────────────────────────────────────────
 st.markdown("## 📦 Product Management")
 st.caption("Manage CDMO product catalog and guide prices")
 
-# ─── Tabs ───────────────────────────────────────────────────
 tab_list, tab_new = st.tabs(["Product List", "New Product"])
 
 with tab_list:
