@@ -201,8 +201,7 @@ else:
                 rows_html += f'<td style="padding:10px 14px;font-size:12px;color:#6b7280">{q["created_by_name"]}</td>'
                 rows_html += f'<td style="padding:10px 14px;font-size:12px;color:#9ca3af">{q["created_at"]}</td>'
                 rows_html += '<td style="padding:10px 14px;font-size:13px">'
-                rows_html += f'<a href="?action=view&id={q["id"]}" style="color:#4f46e5;text-decoration:none;margin-right:12px">View</a>'
-                rows_html += f'<a href="?action=edit&id={q["id"]}" style="color:#4f46e5;text-decoration:none">Edit</a>'
+                rows_html += f'<a href="?action=view&id={q["id"]}" style="color:#4f46e5;text-decoration:none">View</a>'
                 rows_html += '</td></tr>'
 
             table_html = '<div style="border:1px solid #d1d5db;border-radius:8px;overflow:hidden;">'
