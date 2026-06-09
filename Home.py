@@ -45,6 +45,8 @@ st.markdown("""
     .stTextInput label, .stNumberInput label, .stTextArea label {
         font-size: 12px !important; color: #374151 !important; font-weight: 500 !important;
     }
+    /* Keep sidebar radio on one line */
+    [data-testid="stSidebar"] label { white-space: nowrap !important; font-size: 14px !important; }
     #MainMenu, footer, header[data-testid="stHeader"] { visibility: hidden; }
 </style>
 """, unsafe_allow_html=True)
@@ -73,10 +75,10 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
     st.divider()
-    page = st.radio("Navigation", ["📦 Product Management", "📋 Quotation Management"],
+    page = st.radio("Navigation", ["📦 Products", "📋 Quotations"],
                     index=0 if st.session_state.nav == "products" else 1,
                     label_visibility="collapsed")
-    if "Product" in page:
+    if "Products" in page:
         st.session_state.nav = "products"
     else:
         st.session_state.nav = "quotations"
@@ -90,7 +92,7 @@ if st.session_state.nav == "products":
         st.header("📦 Product Management")
     with c2:
         st.write("")  # spacer
-        if st.button("\1", use_container_width=True):
+        if st.button("Create Product", use_container_width=True):
             st.session_state.show_create = True
             st.rerun()
 
@@ -176,7 +178,7 @@ else:
             st.header("📋 Quotation Management")
         with c2:
             st.write("")  # spacer
-            if st.button("\1", use_container_width=True):
+            if st.button("Create Quotation", use_container_width=True):
                 st.session_state.view = "create"
                 st.session_state.items = []
                 st.rerun()
@@ -237,7 +239,7 @@ else:
         with s1:
             sel = st.selectbox("Select product to add", list(popts.keys()), key="ps", label_visibility="collapsed")
         with s2:
-            if st.button("\1", use_container_width=True):
+            if st.button("Add", use_container_width=True):
                 p = popts[sel]
                 ids = [li["product_id"] for li in st.session_state.items]
                 if p["id"] not in ids:
@@ -288,10 +290,10 @@ else:
 
             bc, bd, bs = st.columns([1, 1, 1.5])
             with bc:
-                if st.button("\1", use_container_width=True):
+                if st.button("← Cancel", use_container_width=True):
                     st.session_state.view = "list"; st.session_state.items = []; st.rerun()
             with bd:
-                if st.button("\1", use_container_width=True):
+                if st.button("💾 Save as Draft", use_container_width=True):
                     if not customer or not req or budget <= 0: st.error("Fill all fields.")
                     elif len(st.session_state.items) == 0: st.error("Add at least one line item.")
                     else:
@@ -302,7 +304,7 @@ else:
                         st.session_state.view = "list"; st.session_state.items = []
                         st.success("Saved as Draft!"); st.rerun()
             with bs:
-                if st.button("\1", use_container_width=True):
+                if st.button("✅ Submit for Review", use_container_width=True):
                     if not customer or not req or budget <= 0: st.error("Fill all fields.")
                     elif len(st.session_state.items) == 0: st.error("Add at least one line item.")
                     else:
