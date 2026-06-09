@@ -27,17 +27,6 @@ st.markdown("""
         font-weight: 500 !important; font-size: 13px !important;
         padding: 4px 14px !important;
     }
-    /* Text-link style buttons for actions column */
-    .stButton > button.link-btn {
-        background: transparent !important; color: #4f46e5 !important;
-        border: none !important; border-radius: 0 !important;
-        font-weight: 500 !important; font-size: 13px !important;
-        padding: 0 !important; min-height: auto !important;
-        text-decoration: none !important;
-    }
-    .stButton > button.link-btn:hover {
-        text-decoration: underline !important;
-    }
     /* Table borders */
     .stDataFrame [data-testid="stTable"] {
         border: 1px solid #d1d5db !important;
@@ -148,6 +137,14 @@ if st.session_state.nav == "products":
 # QUOTATION MANAGEMENT
 # ═══════════════════════════════════════════════════════════════
 else:
+    # Handle query param navigation (View/Edit text links in table)
+    qp = st.query_params
+    if "action" in qp and "id" in qp:
+        st.session_state.view = "detail"
+        st.session_state.detail_id = int(qp["id"])
+        st.query_params.clear()
+        st.rerun()
+
     if st.session_state.view == "list":
         c1, c2 = st.columns([5, 1.5])
         with c1:
@@ -165,36 +162,48 @@ else:
         if not quotes:
             st.info("No quotations yet. Click Create Quotation.")
         else:
-            # Data table with borders
-            rows = []
+            # Build pure HTML table with text links for View/Edit
+            rows_html = ""
             for q in quotes:
                 td = fmt(q["total_quoted"]) if q["total_quoted"] and q["total_quoted"] > 0 else "—"
-                rows.append({
-                    "Quote No.": q["quote_no"], "Client": q["customer"],
-                    "Budget": fmt(q["budget"]), "Total Quoted": td,
-                    "Status": q["status"].capitalize(),
-                    "Prepared By": q["created_by_name"], "Date": q["created_at"],
-                })
-            df = pd.DataFrame(rows)
-            def cs(v):
-                if v == "Submitted": return "background:#eef2ff;color:#4338ca;font-weight:500"
-                return "background:#fef3c7;color:#92400e;font-weight:500"
-            st.dataframe(df.style.applymap(cs, subset=["Status"]),
-                         use_container_width=True, hide_index=True, height=350)
+                sc = "#4338ca" if q["status"] == "Submitted" else "#92400e"
+                rows_html += f"""
+                <tr style="border-bottom:1px solid #d1d5db;">
+                    <td style="padding:10px 14px;font-size:13px;color:#4f46e5;font-weight:500">{q['quote_no']}</td>
+                    <td style="padding:10px 14px;font-size:13px;color:#111827">{q['customer']}</td>
+                    <td style="padding:10px 14px;font-size:13px;color:#111827">{fmt(q['budget'])}</td>
+                    <td style="padding:10px 14px;font-size:13px;color:#111827;font-weight:600">{td}</td>
+                    <td style="padding:10px 14px;font-size:12px;color:{sc};font-weight:500">{q['status'].capitalize()}</td>
+                    <td style="padding:10px 14px;font-size:12px;color:#6b7280">{q['created_by_name']}</td>
+                    <td style="padding:10px 14px;font-size:12px;color:#9ca3af">{q['created_at']}</td>
+                    <td style="padding:10px 14px;font-size:13px">
+                        <a href="?action=view&id={q['id']}" style="color:#4f46e5;text-decoration:none;margin-right:12px">View</a>
+                        <a href="?action=edit&id={q['id']}" style="color:#4f46e5;text-decoration:none">Edit</a>
+                    </td>
+                </tr>"""
 
-            # Text-link actions per row
-            for q in quotes:
-                c1, c2, c_rest = st.columns([0.4, 0.4, 8])
-                with c1:
-                    if st.button("View", key=f"v_{q['id']}", type="secondary"):
-                        st.session_state.view = "detail"
-                        st.session_state.detail_id = q["id"]
-                        st.rerun()
-                with c2:
-                    if st.button("Edit", key=f"e_{q['id']}", type="secondary"):
-                        st.session_state.view = "detail"
-                        st.session_state.detail_id = q["id"]
-                        st.rerun()
+            st.markdown(f"""
+            <div style="border:1px solid #d1d5db;border-radius:8px;overflow:hidden;">
+            <table style="width:100%;border-collapse:collapse;">
+                <thead>
+                    <tr style="background:#f9fafb;border-bottom:2px solid #d1d5db;">
+                        <th style="padding:10px 14px;font-size:11px;color:#6b7280;font-weight:600;text-align:left">Quote No.</th>
+                        <th style="padding:10px 14px;font-size:11px;color:#6b7280;font-weight:600;text-align:left">Client</th>
+                        <th style="padding:10px 14px;font-size:11px;color:#6b7280;font-weight:600;text-align:left">Budget</th>
+                        <th style="padding:10px 14px;font-size:11px;color:#6b7280;font-weight:600;text-align:left">Total Quoted</th>
+                        <th style="padding:10px 14px;font-size:11px;color:#6b7280;font-weight:600;text-align:left">Status</th>
+                        <th style="padding:10px 14px;font-size:11px;color:#6b7280;font-weight:600;text-align:left">Prepared By</th>
+                        <th style="padding:10px 14px;font-size:11px;color:#6b7280;font-weight:600;text-align:left">Date</th>
+                        <th style="padding:10px 14px;font-size:11px;color:#6b7280;font-weight:600;text-align:left">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows_html}
+                </tbody>
+            </table>
+            </div>
+            """, unsafe_allow_html=True)
+
 
     elif st.session_state.view == "create":
         st.header("Create Quotation")
