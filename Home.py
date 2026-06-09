@@ -111,7 +111,7 @@ if st.session_state.nav == "products":
             with st.form("create_product_form", clear_on_submit=True):
                 pc1, pc2, pc3 = st.columns([2, 1, 1])
                 with pc1:
-                    ptype = st.text_input("Product Type *", placeholder="e.g. API Process Development")
+                    ptype = st.text_input("Product Name *", placeholder="e.g. API Process Development")
                 with pc2:
                     price = st.number_input("Guide Price (¥) *", min_value=1.0, value=100000.0,
                                             step=10000.0, format="%.0f")
@@ -123,7 +123,7 @@ if st.session_state.nav == "products":
                 with cf2:
                     cancel = st.form_submit_button("Cancel", use_container_width=True)
                 if sub:
-                    if not ptype.strip(): st.error("Product Type required.")
+                    if not ptype.strip(): st.error("Product Name required.")
                     elif price <= 0: st.error("Price must be > 0.")
                     else:
                         create_product(ptype.strip(), price, unit)
@@ -141,7 +141,7 @@ if st.session_state.nav == "products":
         df["Guide Price"] = df["guide_price"].apply(fmt)
         df["Unit"] = df["unit"].apply(lambda u: f"/{u}")
         disp = df[["product_code","product_type","Guide Price","Unit","status","created_at"]]
-        disp.columns = ["Product ID","Product Type","Guide Price","Unit","Status","Created"]
+        disp.columns = ["Product ID","Product Name","Guide Price","Unit","Status","Created"]
         def cs(v):
             if v == "Active": return "background:#eef2ff;color:#4338ca;font-weight:500"
             return "background:#fef3c7;color:#92400e;font-weight:500"
@@ -199,6 +199,10 @@ else:
 
 
     elif st.session_state.view == "create":
+        if st.button("← Back", key="back_create"):
+            st.session_state.view = "list"
+            st.session_state.line_items = []
+            st.rerun()
         st.header("Create Quotation")
 
         st.subheader("Basic Information")
