@@ -1,21 +1,15 @@
 """
 CDMO Quotation Platform — Product Management Page
-Display all products in a table, create new product with auto-generated code.
 """
 
 import streamlit as st
+import pandas as pd
 from src.database import init_db, get_all_products, create_product
 from src.auth import require_auth
-from src.components import inject_css, render_sidebar, status_badge, format_price
+from src.components import inject_css, render_sidebar, format_price
 
 require_auth()
-
-st.set_page_config(
-    page_title="Product Management — CDMO Quotation",
-    page_icon="📦",
-    layout="wide",
-)
-
+st.set_page_config(page_title="Product Management", page_icon="📦", layout="wide")
 init_db()
 inject_css()
 render_sidebar()
@@ -31,40 +25,31 @@ with tab_list:
     else:
         st.caption(f"Total **{len(products)}** product entries")
 
-        rows_html = ""
-        for p in products:
-            rows_html += f"""
-            <tr style="border-bottom:1px solid #f5f5f5;">
-                <td style="padding:10px 14px; font-size:12px; color:#9ca3af;">{p['product_code']}</td>
-                <td style="padding:10px 14px; font-size:13px; color:#1a1a2e; font-weight:500;">{p['product_type']}</td>
-                <td style="padding:10px 14px; font-size:13px; color:#6366f1; font-weight:600;">{format_price(p['guide_price'])}</td>
-                <td style="padding:10px 14px; font-size:12px; color:#6b7280;">/{p['unit']}</td>
-                <td style="padding:10px 14px;">{status_badge(p['status'])}</td>
-                <td style="padding:10px 14px; font-size:12px; color:#9ca3af;">{p['created_at']}</td>
-            </tr>"""
+        # Build DataFrame for proper Streamlit rendering
+        df = pd.DataFrame(products)
+        df = df.rename(columns={
+            "product_code": "Product ID",
+            "product_type": "Product Type",
+            "guide_price": "Guide Price",
+            "unit": "Unit",
+            "status": "Status",
+            "created_at": "Created",
+        })
+        df["Guide Price"] = df["Guide Price"].apply(format_price)
+        df["Unit"] = df["Unit"].apply(lambda u: f"/{u}")
+        display_cols = ["Product ID", "Product Type", "Guide Price", "Unit", "Status", "Created"]
 
-        st.markdown(f"""
-        <div style="background:white; border-radius:10px; border:1px solid #e5e7eb; overflow:hidden;">
-            <table style="width:100%; border-collapse:collapse;">
-                <tr style="background:#f9fafb; border-bottom:1px solid #e5e7eb;">
-                    <td style="padding:10px 14px; font-size:11px; color:#6b7280; font-weight:600;">Product ID</td>
-                    <td style="padding:10px 14px; font-size:11px; color:#6b7280; font-weight:600;">Product Type</td>
-                    <td style="padding:10px 14px; font-size:11px; color:#6b7280; font-weight:600;">Guide Price</td>
-                    <td style="padding:10px 14px; font-size:11px; color:#6b7280; font-weight:600;">Unit</td>
-                    <td style="padding:10px 14px; font-size:11px; color:#6b7280; font-weight:600;">Status</td>
-                    <td style="padding:10px 14px; font-size:11px; color:#6b7280; font-weight:600;">Created</td>
-                </tr>
-                {rows_html}
-            </table>
-        </div>
-        """, unsafe_allow_html=True)
+        # Color-code status
+        def highlight_status(val):
+            if val == "Active":
+                return "background-color: #e0e7ff; color: #4338ca; font-weight: 500; border-radius: 4px;"
+            return "background-color: #fef3c7; color: #92400e; font-weight: 500; border-radius: 4px;"
+
+        styled = df[display_cols].style.applymap(highlight_status, subset=["Status"])
+        st.dataframe(styled, use_container_width=True, hide_index=True, height=400)
 
 with tab_new:
-    st.markdown("""
-    <div style="background:white; border-radius:10px; border:1px solid #e5e7eb; padding:24px; max-width:600px;">
-    <h4 style="margin:0 0 16px 0; color:#1a1a2e;">Create New Product</h4>
-    """, unsafe_allow_html=True)
-
+    st.markdown("### Create New Product")
     with st.form("new_product_form", clear_on_submit=True):
         col1, col2, col3 = st.columns([2, 1, 1])
         with col1:
@@ -75,16 +60,12 @@ with tab_new:
         with col3:
             unit = st.selectbox("Pricing Unit *", options=["project", "batch", "study"])
 
-        submitted = st.form_submit_button("Create Product", type="primary", use_container_width=True)
-
-        if submitted:
+        if st.form_submit_button("Create Product", type="primary", use_container_width=True):
             if not product_type.strip():
                 st.error("Product Type is required.")
             elif guide_price <= 0:
                 st.error("Guide Price must be greater than 0.")
             else:
-                new_p = create_product(product_type.strip(), guide_price, unit)
-                st.success(f"Product '{new_p['product_code']}' created successfully!")
+                create_product(product_type.strip(), guide_price, unit)
+                st.success(f"Product created successfully!")
                 st.rerun()
-
-    st.markdown("</div>", unsafe_allow_html=True)
