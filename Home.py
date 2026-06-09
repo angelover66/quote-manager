@@ -27,9 +27,32 @@ st.markdown("""
         font-weight: 500 !important; font-size: 13px !important;
         padding: 4px 14px !important;
     }
+    /* Text-link style buttons for actions column */
+    .stButton > button.link-btn {
+        background: transparent !important; color: #4f46e5 !important;
+        border: none !important; border-radius: 0 !important;
+        font-weight: 500 !important; font-size: 13px !important;
+        padding: 0 !important; min-height: auto !important;
+        text-decoration: none !important;
+    }
+    .stButton > button.link-btn:hover {
+        text-decoration: underline !important;
+    }
+    /* Table borders */
+    .stDataFrame [data-testid="stTable"] {
+        border: 1px solid #d1d5db !important;
+    }
     .stDataFrame [data-testid="stTable"] table,
-    .stDataFrame [data-testid="stTable"] td { background: #fff !important; color: #111 !important; }
-    .stDataFrame [data-testid="stTable"] th { background: #f9fafb !important; color: #374151 !important; }
+    .stDataFrame [data-testid="stTable"] td {
+        background: #fff !important; color: #111 !important;
+    }
+    .stDataFrame [data-testid="stTable"] td {
+        border-bottom: 1px solid #d1d5db !important;
+    }
+    .stDataFrame [data-testid="stTable"] th {
+        background: #f9fafb !important; color: #374151 !important;
+        border-bottom: 2px solid #d1d5db !important;
+    }
     .stTextInput label, .stNumberInput label, .stTextArea label {
         font-size: 12px !important; color: #374151 !important; font-weight: 500 !important;
     }
@@ -142,37 +165,33 @@ else:
         if not quotes:
             st.info("No quotations yet. Click Create Quotation.")
         else:
-            # Manual table with inline View Detail buttons per row
-            hc = st.columns([1.2, 1.4, 1, 1, 0.8, 1, 1, 0.7])
-            for c, l in zip(hc, ["Quote No.","Client","Budget","Total Quoted","Status","Prepared By","Date",""]):
-                with c:
-                    st.markdown(f"<div style='font-size:11px;color:#6b7280;font-weight:600'>{l}</div>",
-                                unsafe_allow_html=True)
-
+            # Data table with borders
+            rows = []
             for q in quotes:
                 td = fmt(q["total_quoted"]) if q["total_quoted"] and q["total_quoted"] > 0 else "—"
-                status_color = "#4338ca" if q["status"] == "Submitted" else "#92400e"
-                cols = st.columns([1.2, 1.4, 1, 1, 0.8, 1, 1, 0.7])
-                with cols[0]:
-                    st.write(f"<span style='color:#4f46e5;font-weight:500;font-size:13px'>{q['quote_no']}</span>",
-                             unsafe_allow_html=True)
-                with cols[1]:
-                    st.write(f"<span style='font-size:13px'>{q['customer']}</span>", unsafe_allow_html=True)
-                with cols[2]:
-                    st.write(f"<span style='font-size:13px'>{fmt(q['budget'])}</span>", unsafe_allow_html=True)
-                with cols[3]:
-                    st.write(f"<span style='font-size:13px;font-weight:600'>{td}</span>", unsafe_allow_html=True)
-                with cols[4]:
-                    st.write(f"<span style='font-size:12px;color:{status_color};font-weight:500'>{q['status'].capitalize()}</span>",
-                             unsafe_allow_html=True)
-                with cols[5]:
-                    st.write(f"<span style='font-size:12px;color:#6b7280'>{q['created_by_name']}</span>",
-                             unsafe_allow_html=True)
-                with cols[6]:
-                    st.write(f"<span style='font-size:12px;color:#9ca3af'>{q['created_at']}</span>",
-                             unsafe_allow_html=True)
-                with cols[7]:
-                    if st.button("View", key=f"vd_{q['id']}", use_container_width=True):
+                rows.append({
+                    "Quote No.": q["quote_no"], "Client": q["customer"],
+                    "Budget": fmt(q["budget"]), "Total Quoted": td,
+                    "Status": q["status"].capitalize(),
+                    "Prepared By": q["created_by_name"], "Date": q["created_at"],
+                })
+            df = pd.DataFrame(rows)
+            def cs(v):
+                if v == "Submitted": return "background:#eef2ff;color:#4338ca;font-weight:500"
+                return "background:#fef3c7;color:#92400e;font-weight:500"
+            st.dataframe(df.style.applymap(cs, subset=["Status"]),
+                         use_container_width=True, hide_index=True, height=350)
+
+            # Text-link actions per row
+            for q in quotes:
+                c1, c2, c_rest = st.columns([0.4, 0.4, 8])
+                with c1:
+                    if st.button("View", key=f"v_{q['id']}", type="secondary"):
+                        st.session_state.view = "detail"
+                        st.session_state.detail_id = q["id"]
+                        st.rerun()
+                with c2:
+                    if st.button("Edit", key=f"e_{q['id']}", type="secondary"):
                         st.session_state.view = "detail"
                         st.session_state.detail_id = q["id"]
                         st.rerun()
