@@ -65,6 +65,15 @@ if "editing_id" not in st.session_state: st.session_state.editing_id = None
 if "line_items" not in st.session_state: st.session_state.line_items = []
 if "show_create" not in st.session_state: st.session_state.show_create = False
 
+# Handle query param navigation (View link in quotation table)
+qp = st.query_params
+if "action" in qp and "id" in qp:
+    st.session_state.nav = "quotations"
+    st.session_state.view = "detail"
+    st.session_state.detail_id = int(qp["id"])
+    st.query_params.clear()
+    st.rerun()
+
 # ═══════════════════════════════════════════════════════════════
 # SIDEBAR
 # ═══════════════════════════════════════════════════════════════
@@ -143,35 +152,6 @@ if st.session_state.nav == "products":
 # QUOTATION MANAGEMENT
 # ═══════════════════════════════════════════════════════════════
 else:
-    # Handle query param navigation (View/Edit text links in table)
-    qp = st.query_params
-    if "action" in qp and "id" in qp:
-        qid = int(qp["id"])
-        if qp["action"] == "edit":
-            # Load existing quotation data into edit form
-            eq = get_quotation_detail(qid)
-            if eq:
-                st.session_state.editing_id = qid
-                st.session_state.line_items = [{
-                    "product_id": it["product_id"],
-                    "product_type": it["product_type"],
-                    "product_code": it["product_code"],
-                    "guide_price": it["guide_price"],
-                    "unit": it["unit"],
-                    "quoted_price": it["quoted_price"],
-                    "quantity": it["quantity"],
-                } for it in eq["items"]]
-                # Store basic info for form pre-fill
-                st.session_state.edit_customer = eq["customer"]
-                st.session_state.edit_budget = eq["budget"]
-                st.session_state.edit_requirement = eq["requirement"]
-                st.session_state.view = "edit"
-        else:
-            st.session_state.view = "detail"
-            st.session_state.detail_id = qid
-        st.query_params.clear()
-        st.rerun()
-
     if st.session_state.view == "list":
         c1, c2 = st.columns([5, 1.5])
         with c1:
